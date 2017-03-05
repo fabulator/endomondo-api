@@ -1,0 +1,25 @@
+{
+    "name": "fabulator/endomondo-api",
+    "description": "Endomondo API.",
+    "authors": [
+        {
+            "name": "Michal Ozogán",
+            "email": "michal@ozogan.eu"
+        }
+    ],
+  "repositories": [{
+    "type": "vcs",
+    "url": "git://github.com/fabulator/endomondo-api-base.git"
+  }, {
+    "type": "vcs",
+    "url": "git://github.com/fabulator/endomondo-workouts.git"
+  }],
+	"require": {
+		"PHP" : ">=5.5",
+        "fabulator/endomondo-api-base": "dev-master",
+        "fabulator/endomondo-workouts": "dev-master"
+	},
+	"autoload": {
+		"psr-0": { "Fabulator": "lib/" }
+	}
+}
