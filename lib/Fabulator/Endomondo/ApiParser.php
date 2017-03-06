@@ -79,7 +79,7 @@ final class ApiParser {
             $workout->setTitle($source['title']);
         }
 
-        if ($source['points']) {
+        if ($source['points'] && isset($source['points']['points'])) {
             $points = [];
             foreach ($source['points']['points'] as $point) {
                 $points[] = ApiParser::parsePoint($point);
@@ -93,6 +93,14 @@ final class ApiParser {
 
         if (isset($source['heart_rate_max'])) {
             $workout->setMaxHeartRate($source['heart_rate_max']);
+        }
+
+        if (isset($source['ascent'])) {
+            $workout->setAscent($source['ascent']);
+        }
+
+        if (isset($source['descent'])) {
+            $workout->setDescent($source['descent']);
         }
 
         return $workout;

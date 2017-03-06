@@ -2,6 +2,8 @@
 
 namespace Fabulator\Endomondo;
 
+use GuzzleHttp\Exception\ClientException;
+
 class EndomondoAPI extends EndomondoAPIBase
 {
     /**
@@ -30,7 +32,15 @@ class EndomondoAPI extends EndomondoAPIBase
      */
     public function request($method, $endpoint, $data = [])
     {
-        $response = parent::request($method, $endpoint, $data);
+        try {
+            $response = parent::request($method, $endpoint, $data);
+        } catch (ClientException $e) {
+            if ($e->getCode() == 429) {
+                throw new EndomondoAPIexception('You made too many requests', $e->getCode(), $e);
+            }
+
+            throw new EndomondoAPIexception($e->getMessage(), $e->getCode(), $e);
+        }
         return json_decode((string) $response->getBody(), true);
     }
 
@@ -54,7 +64,7 @@ class EndomondoAPI extends EndomondoAPIBase
 
     /**
      * @param array $filters array
-     * @return array<Workout>
+     * @return Workout[]
      */
     public function getWorkouts($filters = [])
     {
@@ -63,7 +73,7 @@ class EndomondoAPI extends EndomondoAPIBase
         ];
 
         $filters = array_merge([
-            'expand' => 'workout',
+            'expand' => 'workout,points',
         ], $filters);
 
         $response = $this->get('rest/v1/users/' . $this->userId . '/workouts/history?' . http_build_query($filters));
@@ -80,7 +90,7 @@ class EndomondoAPI extends EndomondoAPIBase
 
     /**
      * @param \DateTime $from
-     * @return array
+     * @return Workout[]
      */
     public function getWorkoutsFrom(\DateTime $from)
     {
@@ -91,7 +101,7 @@ class EndomondoAPI extends EndomondoAPIBase
 
     /**
      * @param \DateTime $until
-     * @return array
+     * @return Workout[]
      */
     public function getWorkoutsUntil(\DateTime $until)
     {
@@ -103,7 +113,7 @@ class EndomondoAPI extends EndomondoAPIBase
     /**
      * @param \DateTime $from
      * @param \DateTime $to
-     * @return array
+     * @return Workout[]
      */
     public function getWorkoutsFromTo(\DateTime $from, \DateTime $to)
     {
@@ -168,6 +178,14 @@ class EndomondoAPI extends EndomondoAPIBase
 
         if ($workout->getMapPrivacy() !== null) {
             $data['show_map'] = $workout->getMapPrivacy();
+        }
+
+        if ($workout->getAscent() !== null) {
+            $data['ascent'] = $workout->getAscent();
+        }
+
+        if ($workout->getDescent() !== null) {
+            $data['descent'] = $workout->getDescent();
         }
 
         return $this->put('rest/v1/users/' . $this->userId . '/workouts/' . $workout->getId(), $data);
