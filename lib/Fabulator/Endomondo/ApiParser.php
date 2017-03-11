@@ -2,6 +2,10 @@
 
 namespace Fabulator\Endomondo;
 
+/**
+ * Class ApiParser
+ * @package Fabulator\Endomondo
+ */
 final class ApiParser {
 
     /**
@@ -44,10 +48,13 @@ final class ApiParser {
             $point->setHeartRate($source['sensor_data']['heart_rate']);
         }
 
+        if (isset($source['sensor_data']['cadence'])) {
+            $point->setCadence($source['sensor_data']['cadence']);
+        }
+
         if (isset($source['instruction'])) {
             $point->setInstruction($source['instruction']);
         }
-
         return $point;
     }
 

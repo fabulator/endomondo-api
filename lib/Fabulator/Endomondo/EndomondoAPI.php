@@ -4,6 +4,10 @@ namespace Fabulator\Endomondo;
 
 use GuzzleHttp\Exception\ClientException;
 
+/**
+ * Class EndomondoAPI
+ * @package Fabulator\Endomondo
+ */
 class EndomondoAPI extends EndomondoAPIBase
 {
     /**
@@ -13,35 +17,93 @@ class EndomondoAPI extends EndomondoAPIBase
      */
     public function login($username, $password)
     {
-        $response = $this->request('POST', 'rest/session', [
-            'email' => $username,
-            'password' => $password,
-            'remember' => true,
-        ]);
-
-        $this->userId = $response['id'];
-
+        $response = json_decode(parent::login($username, $password)->getBody(), true);
+        $this->setUserId($response['id']);
         return $response;
+    }
+
+    /**
+     * Generate csfr token.
+     *
+     * @return void
+     * @throws EndomondoAPIexception When generating fail
+     */
+    protected function generateCSRFToken()
+    {
+        try {
+            parent::generateCSRFToken();
+        } catch (ClientException $e) {
+            // too many request, sleep for a while
+            if ($e->getCode() === 429) {
+                sleep(3);
+                return;
+            }
+
+            throw new EndomondoAPIexception($e->getMessage(), $e->getCode(), $e);
+        }
     }
 
     /**
      * @param $method string http method
      * @param $endpoint string Endomondo endpoint
      * @param array $data
+     * @throws EndomondoAPIexception when api failed
      * @return array;
      */
     public function request($method, $endpoint, $data = [])
     {
         try {
-            $response = parent::request($method, $endpoint, $data);
+            $response = parent::send($method, $endpoint, $data);
         } catch (ClientException $e) {
-            if ($e->getCode() == 429) {
-                throw new EndomondoAPIexception('You made too many requests', $e->getCode(), $e);
+            // too many request, sleep for a while
+            if ($e->getCode() === 429) {
+                sleep(3);
+                return $this->request($method, $endpoint, $data);
             }
-
             throw new EndomondoAPIexception($e->getMessage(), $e->getCode(), $e);
         }
         return json_decode((string) $response->getBody(), true);
+    }
+
+    /**
+     * Send a GET request
+     *
+     * @param string $endpoint
+     * @param array $options
+     * @return array
+     */
+    public function get($endpoint, $options = [])
+    {
+        return $this->request('GET', 'rest/v1/users/' . $this->userId . '/' . $endpoint . '?' . http_build_query($options));
+    }
+
+    /**
+     * @param string $endpoint
+     * @return array
+     */
+    public function delete($endpoint)
+    {
+        return $this->request('DELETE', 'rest/v1/users/' . $this->userId . '/' . $endpoint);
+    }
+
+    /**
+     * @param string $endpoint
+     * @param array $data
+     * @return array
+     */
+    public function post($endpoint, $data)
+    {
+        return $this->request('POST', 'rest/v1/users/' . $this->userId . '/' . $endpoint, $data);
+    }
+
+    /**
+     * @param string $endpoint
+     * @param array $data
+     * @return array
+     */
+    public function put($endpoint, $data)
+    {
+        return $this->request('PUT', 'rest/v1/users/' . $this->userId . '/' . $endpoint, $data);
     }
 
     /**
@@ -50,7 +112,7 @@ class EndomondoAPI extends EndomondoAPIBase
      */
     public function getWorkout($id)
     {
-        return ApiParser::parseWorkout($this->get('rest/v1/users/' . $this->userId . '/workouts/' . $id));
+        return ApiParser::parseWorkout($this->get('workouts/' . $id));
     }
 
     /**
@@ -59,12 +121,17 @@ class EndomondoAPI extends EndomondoAPIBase
      */
     public function deleteWorkout($id)
     {
-        return $this->delete('rest/v1/users/' . $this->userId . '/workouts/' . $id);
+        return $this->delete('workouts/' . $id);
     }
 
     /**
      * @param array $filters array
      * @return Workout[]
+     * @return array $options {
+     *     @var int $total Total found workout
+     *     @var string $next Url for next workouts
+     *     @var Workout[] $workout List of workouts
+     * }
      */
     public function getWorkouts($filters = [])
     {
@@ -76,7 +143,7 @@ class EndomondoAPI extends EndomondoAPIBase
             'expand' => 'workout,points',
         ], $filters);
 
-        $response = $this->get('rest/v1/users/' . $this->userId . '/workouts/history?' . http_build_query($filters));
+        $response = $this->get('workouts/history', $filters);
 
         foreach ($response['data'] as $workout) {
             $data['workouts'][] = ApiParser::parseWorkout($workout);
@@ -90,7 +157,11 @@ class EndomondoAPI extends EndomondoAPIBase
 
     /**
      * @param \DateTime $from
-     * @return Workout[]
+     * @return array $options {
+     *     @var int $total Total found workout
+     *     @var string $next Url for next workouts
+     *     @var Workout[] $workout List of workouts
+     * }
      */
     public function getWorkoutsFrom(\DateTime $from)
     {
@@ -101,7 +172,11 @@ class EndomondoAPI extends EndomondoAPIBase
 
     /**
      * @param \DateTime $until
-     * @return Workout[]
+     * @return array $options {
+     *     @var int $total Total found workout
+     *     @var string $next Url for next workouts
+     *     @var Workout[] $workout List of workouts
+     * }
      */
     public function getWorkoutsUntil(\DateTime $until)
     {
@@ -113,7 +188,11 @@ class EndomondoAPI extends EndomondoAPIBase
     /**
      * @param \DateTime $from
      * @param \DateTime $to
-     * @return Workout[]
+     * @return array $options {
+     *     @var int $total Total found workout
+     *     @var string $next Url for next workouts
+     *     @var Workout[] $workout List of workouts
+     * }
      */
     public function getWorkoutsFromTo(\DateTime $from, \DateTime $to)
     {
@@ -125,22 +204,22 @@ class EndomondoAPI extends EndomondoAPIBase
 
     /**
      * @param $name
-     * @param Workout $workout
+     * @param string $workoutId
      * @return array
      */
-    public function addHastag($name, Workout $workout)
+    public function addHastag($name, $workoutId)
     {
-        return $this->post('rest/v1/users/' . $this->userId . '/workouts/' . $workout->getId() . '/hashtags/' . $name, []);
+        return $this->post('workouts/' . $workoutId . '/hashtags/' . $name, []);
     }
 
     /**
      * @param $name
-     * @param Workout $workout
+     * @param string $workoutId
      * @return array
      */
-    public function removeHashtag($name, Workout $workout)
+    public function removeHashtag($name, $workoutId)
     {
-        return $this->delete('rest/v1/users/' . $this->userId . '/workouts/' . $workout->getId() . '/hashtags/' . $name);
+        return $this->delete('workouts/' . $workoutId . '/hashtags/' . $name);
     }
 
     /**
@@ -188,7 +267,7 @@ class EndomondoAPI extends EndomondoAPIBase
             $data['descent'] = $workout->getDescent();
         }
 
-        return $this->put('rest/v1/users/' . $this->userId . '/workouts/' . $workout->getId(), $data);
+        return $this->put('workouts/' . $workout->getId(), $data);
     }
 
 }
