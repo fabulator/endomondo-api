@@ -6,4 +6,4 @@ namespace Fabulator\Endomondo;
  * Class EndomondoAPIexception
  * @package Fabulator\Endomondo
  */
-class EndomondoAPIexception extends \Exception {}
+class EndomondoApiException extends \Exception {}

@@ -8,7 +8,7 @@ use GuzzleHttp\Exception\ClientException;
  * Class EndomondoAPI
  * @package Fabulator\Endomondo
  */
-class EndomondoAPI extends EndomondoAPIBase
+class EndomondoApi extends EndomondoAPIBase
 {
     /**
      * @param string $username
@@ -26,7 +26,7 @@ class EndomondoAPI extends EndomondoAPIBase
      * Generate csfr token.
      *
      * @return void
-     * @throws EndomondoAPIexception When generating fail
+     * @throws EndomondoApiException When generating fail
      */
     protected function generateCSRFToken()
     {
@@ -35,11 +35,10 @@ class EndomondoAPI extends EndomondoAPIBase
         } catch (ClientException $e) {
             // too many request, sleep for a while
             if ($e->getCode() === 429) {
-                sleep(3);
-                return;
+                throw new EndomondoApiException('Too many requests', $e->getCode(), $e);
             }
 
-            throw new EndomondoAPIexception($e->getMessage(), $e->getCode(), $e);
+            throw new EndomondoApiException($e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -47,7 +46,7 @@ class EndomondoAPI extends EndomondoAPIBase
      * @param $method string http method
      * @param $endpoint string Endomondo endpoint
      * @param array $data
-     * @throws EndomondoAPIexception when api failed
+     * @throws EndomondoApiException when api failed
      * @return array;
      */
     public function request($method, $endpoint, $data = [])
@@ -57,10 +56,9 @@ class EndomondoAPI extends EndomondoAPIBase
         } catch (ClientException $e) {
             // too many request, sleep for a while
             if ($e->getCode() === 429) {
-                sleep(3);
-                return $this->request($method, $endpoint, $data);
+                throw new EndomondoApiException('Too many requests', $e->getCode(), $e);
             }
-            throw new EndomondoAPIexception($e->getMessage(), $e->getCode(), $e);
+            throw new EndomondoApiException($e->getMessage(), $e->getCode(), $e);
         }
         return json_decode((string) $response->getBody(), true);
     }
@@ -116,7 +114,7 @@ class EndomondoAPI extends EndomondoAPIBase
     }
 
     /**
-     * @param $id
+     * @param string $id Id of workout to delete
      * @return array
      */
     public function deleteWorkout($id)
@@ -141,6 +139,7 @@ class EndomondoAPI extends EndomondoAPIBase
 
         $filters = array_merge([
             'expand' => 'workout,points',
+            'limit' => 1000,
         ], $filters);
 
         $response = $this->get('workouts/history', $filters);
@@ -157,35 +156,66 @@ class EndomondoAPI extends EndomondoAPIBase
 
     /**
      * @param \DateTime $from
+     * @param int $limit number of workouts on page
      * @return array $options {
      *     @var int $total Total found workout
      *     @var string $next Url for next workouts
      *     @var Workout[] $workout List of workouts
      * }
      */
-    public function getWorkoutsFrom(\DateTime $from)
+    public function getWorkoutsFrom(\DateTime $from, $limit = 10)
     {
         return $this->getWorkouts([
-            'after' => $from->format('c')
+            'after' => $from->format('c'),
+            'limit' => $limit,
         ]);
     }
 
     /**
      * @param \DateTime $until
+     * @param int $limit number of workouts on page
      * @return array $options {
      *     @var int $total Total found workout
      *     @var string $next Url for next workouts
      *     @var Workout[] $workout List of workouts
      * }
      */
-    public function getWorkoutsUntil(\DateTime $until)
+    public function getWorkoutsUntil(\DateTime $until, $limit = 10)
     {
         return $this->getWorkouts([
-            'before' => $until->format('c')
+            'before' => $until->format('c'),
+            'limit' => $limit,
         ]);
     }
 
     /**
+     * Try to find a single workout between two dates.
+     *
+     * @param \DateTime $from
+     * @param \DateTime $to
+     * @return Workout|null
+     */
+    public function getWorkoutBetween(\DateTime $from, \DateTime $to)
+    {
+        $workouts = $this->getWorkoutsUntil($to, 1);
+
+        /* @var $workout Workout */
+        $workout = $workouts['workouts'][0];
+
+        if (!$workout) {
+            return null;
+        }
+
+        if ($workout->getStart() > $from) {
+            return $workout;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get all workouts between two dates.
+     *
      * @param \DateTime $from
      * @param \DateTime $to
      * @return array $options {
@@ -198,7 +228,7 @@ class EndomondoAPI extends EndomondoAPIBase
     {
         return $this->getWorkouts([
             'after' => $from->format('c'),
-            'before' => $to->format('c')
+            'before' => $to->format('c'),
         ]);
     }
 
