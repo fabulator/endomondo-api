@@ -110,6 +110,10 @@ final class ApiParser {
             $workout->setDescent($source['descent']);
         }
 
+        if (isset($source['cadence'])) {
+            $workout->setCadence($source['cadence']);
+        }
+
         return $workout;
     }
 }
