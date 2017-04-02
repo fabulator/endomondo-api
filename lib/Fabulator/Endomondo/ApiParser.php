@@ -78,11 +78,11 @@ final class ApiParser {
             ->setId($source['id'])
             ->setCalories($source['calories']);
 
-        if ($source['notes']) {
+        if (isset($source['notes'])) {
             $workout->setNotes($source['notes']);
         }
 
-        if ($source['title']) {
+        if (isset($source['title'])) {
             $workout->setTitle($source['title']);
         }
 
