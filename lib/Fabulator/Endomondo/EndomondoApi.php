@@ -262,7 +262,8 @@ class EndomondoApi extends EndomondoAPIBase
             'duration' => $workout->getDuration(),
             'distance' => $workout->getDistance(),
             'sport' => $workout->getTypeId(),
-            'start_time' => $workout->getStart()->format('Y-m-d\TH:i:s.u\Z'),
+            'start_time' => $workout->getStart()->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
+            'update_calories' => true,
         ];
 
         if ($workout->getAvgHeartRate() !== null) {

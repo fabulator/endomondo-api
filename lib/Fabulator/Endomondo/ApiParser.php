@@ -9,15 +9,16 @@ namespace Fabulator\Endomondo;
 final class ApiParser {
 
     /**
-     * @param $source array
+     * @param $source
+     * @param \DateTimeZone $timeZone
      * @return Point
      */
-    static function parsePoint($source)
+    static function parsePoint($source, \DateTimeZone $timeZone)
     {
         $point = new Point;
 
         if (isset($source['time'])) {
-            $point->setTime(new \DateTime($source['time']));
+            $point->setTime((new \DateTime($source['time']))->setTimezone($timeZone));
         }
 
         if (isset($source['latitude'])) {
@@ -70,13 +71,16 @@ final class ApiParser {
             ->setSource($source)
             ->setTypeId($source['sport'])
             ->setDuration($source['duration'])
-            ->setStart(new \DateTime($source['start_time']))
-            ->setDistance($source['distance'])
+            ->setStart(new \DateTime($source['local_start_time']))
             ->setMapPrivacy($source['show_map'])
             ->setWorkoutPrivacy($source['show_workout'])
             ->setHastags($source['hashtags'])
             ->setId($source['id'])
             ->setCalories($source['calories']);
+
+        if (isset($source['distance'])) {
+            $workout->setDistance($source['distance']);
+        }
 
         if (isset($source['notes'])) {
             $workout->setNotes($source['notes']);
@@ -89,7 +93,7 @@ final class ApiParser {
         if ($source['points'] && isset($source['points']['points'])) {
             $points = [];
             foreach ($source['points']['points'] as $point) {
-                $points[] = ApiParser::parsePoint($point);
+                $points[] = ApiParser::parsePoint($point, $workout->getStart()->getTimezone());
             }
             $workout->setPoints($points);
         }
