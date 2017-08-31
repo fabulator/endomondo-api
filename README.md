@@ -25,3 +25,6 @@ $workout
 
 $endomondo->editWorkout($workout);
 ```
+
+###Creating workouts
+You have to use [fabulator/endomondo-api-old](https://github.com/fabulator/endomondo-api-old) package.
