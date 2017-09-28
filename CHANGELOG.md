@@ -1,6 +1,15 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2017-09-28
+###Added
+Add api for getting user profile
+
+
+## [1.0.3] - 2017-08-10
+###Fixed
+Fix editing workout without distance
+
 ## [1.0.2] - 2017-04-23
 ###Fixed
 Fix parsing time in workout and points - keep timezone.

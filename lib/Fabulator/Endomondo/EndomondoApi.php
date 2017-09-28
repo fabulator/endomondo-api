@@ -105,6 +105,16 @@ class EndomondoApi extends EndomondoAPIBase
     }
 
     /**
+     * Get Endomondo Profile of logged user;
+     *
+     * @return array
+     */
+    public function getProfile()
+    {
+        return $this->get('');
+    }
+
+    /**
      * @param $id string
      * @return Workout
      */
@@ -260,7 +270,7 @@ class EndomondoApi extends EndomondoAPIBase
     {
         $data = [
             'duration' => $workout->getDuration(),
-            'distance' => $workout->getDistance(),
+            'distance' => $workout->getDistance() ?: 0,
             'sport' => $workout->getTypeId(),
             'start_time' => $workout->getStart()->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
             'update_calories' => true,
