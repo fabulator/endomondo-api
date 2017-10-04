@@ -75,8 +75,11 @@ final class ApiParser {
             ->setMapPrivacy($source['show_map'])
             ->setWorkoutPrivacy($source['show_workout'])
             ->setHastags($source['hashtags'])
-            ->setId($source['id'])
-            ->setCalories($source['calories']);
+            ->setId($source['id']);
+
+        if (isset($source['calories'])) {
+            $workout->setCalories($source['calories']);
+        }
 
         if (isset($source['distance'])) {
             $workout->setDistance($source['distance']);
