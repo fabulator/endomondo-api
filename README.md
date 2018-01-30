@@ -14,7 +14,7 @@ $workout = $endomondo->getWorkout('775131509');
 echo $workout->toString();
 ```
 
-###Editing workouts
+### Editing workouts
 
 ```php
 $workout = $endomondo->getWorkout('775131509');
@@ -26,5 +26,5 @@ $workout
 $endomondo->editWorkout($workout);
 ```
 
-###Creating workouts
+### Creating workouts
 You have to use [fabulator/endomondo-api-old](https://github.com/fabulator/endomondo-api-old) package.
