@@ -284,8 +284,8 @@ class EndomondoApi extends EndomondoAPIBase
             $data['heart_rate_max'] = $workout->getMaxHeartRate();
         }
 
-        if ($workout->getMessages() !== null) {
-            $data['messages'] = $workout->getMessages();
+        if ($workout->getMessage() !== null) {
+            $data['message'] = $workout->getMessage();
         }
 
         if ($workout->getTitle() !== null) {

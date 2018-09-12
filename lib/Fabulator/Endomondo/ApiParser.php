@@ -85,8 +85,8 @@ final class ApiParser {
             $workout->setDistance($source['distance']);
         }
 
-        if (isset($source['messages'])) {
-            $workout->setMessages($source['messages']);
+        if (isset($source['message'])) {
+            $workout->setMessage($source['message']);
         }
 
         if (isset($source['title'])) {
