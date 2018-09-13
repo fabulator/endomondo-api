@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2018-09-13
+###Fixed
+- Change note to message because of changes in Endomondo
+
 ## [1.1.1] - 2017-10-04
 ###Fixed
 - Make calories count only optional parameter.
