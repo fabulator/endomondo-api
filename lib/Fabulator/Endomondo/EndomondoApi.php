@@ -155,7 +155,11 @@ class EndomondoApi extends EndomondoAPIBase
         $response = $this->get('workouts/history', $filters);
 
         foreach ($response['data'] as $workout) {
-            $data['workouts'][] = ApiParser::parseWorkout($workout);
+            try {
+                $data['workouts'][] = ApiParser::parseWorkout($workout);
+            } catch(EndomondoWorkoutException $e) {
+                // just ingore workout if it's type is unknown
+            }
         }
 
         $data['total'] = $response['paging']['total'];
